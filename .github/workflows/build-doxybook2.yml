@@ -1,0 +1,137 @@
+name: Build Doxybook2
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOXYBOOK2_VERSION_FILE: TARGET_DOXYBOOK2_VERSION
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/hondarer/oracle-linux-8-container/oracle-linux-8-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        HOST_USER: user
+        HOST_UID: 1001
+        HOST_GID: 127
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: doxybook2-bin
+
+      - name: Read Doxybook2 version
+        id: version
+        run: |
+          cd doxybook2-bin
+          VERSION=$(grep -v '^#' ${DOXYBOOK2_VERSION_FILE} | grep -v '^$' | head -n 1 | tr -d '[:space:]')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "git_tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Doxybook2 version: ${VERSION}"
+
+      - name: Clone Doxybook2 ${{ steps.version.outputs.version }}
+        run: |
+          git clone --branch ${{ steps.version.outputs.git_tag }} --depth 1 https://github.com/matusnovak/doxybook2.git doxybook2-source
+
+      - name: Configure git safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/doxybook2-bin"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/doxybook2-source"
+
+      - name: Install vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
+          /opt/vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=/opt/vcpkg" >> $GITHUB_ENV
+
+      - name: Build Doxybook2 (MinSizeRel, static)
+        run: |
+          cd doxybook2-source
+          mkdir -p build
+          cmake -B ./build -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_INSTALL_PREFIX=./install \
+            -DDOXYBOOK_TESTS=OFF \
+            -DVCPKG_TARGET_TRIPLET=x64-linux \
+            -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
+          cmake --build ./build --config MinSizeRel -j$(nproc)
+          cmake --build ./build --target install --config MinSizeRel
+
+      - name: Verify binary
+        run: |
+          ls -la doxybook2-source/install/bin/
+          doxybook2-source/install/bin/doxybook2 --help || true
+
+      - name: Prepare Linux artifacts
+        run: |
+          mkdir -p artifacts/linux-el8-x64
+          cp doxybook2-source/install/bin/doxybook2 artifacts/linux-el8-x64/
+          strip artifacts/linux-el8-x64/doxybook2
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: artifacts/linux-el8-x64
+          if-no-files-found: error
+
+  commit-changes:
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean bin directory
+        run: |
+          # bin ディレクトリをクリーンアップ
+          rm -rf bin/
+          mkdir -p bin/
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binary
+          path: bin/linux-el8-x64/
+
+      - name: Set executable permission
+        run: |
+          chmod +x bin/linux-el8-x64/doxybook2
+
+      - name: Generate documentation from templates
+        run: |
+          chmod +x .github/scripts/generate_docs.sh
+          ./.github/scripts/generate_docs.sh
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push changes
+        run: |
+          # bin, ドキュメントの変更を確認
+          if [ -n "$(git status --porcelain bin/ README.md)" ]; then
+            echo "Binary and documentation changes detected"
+            git add -A bin/ README.md
+            git commit -m "ビルド済みバイナリとドキュメントを更新"
+            git push
+          else
+            echo "No changes to commit"
+          fi

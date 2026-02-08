@@ -1,0 +1,7 @@
+# Doxybook2 Target Version
+# このファイルでビルド対象の Doxybook2 バージョンを指定します
+# バージョン更新時はこのファイルのみを編集してください
+# 形式: X.Y.Z (例: 1.5.0)
+# 参考: https://github.com/matusnovak/doxybook2/releases
+
+1.5.0
