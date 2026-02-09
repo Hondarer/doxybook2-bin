@@ -1,12 +1,12 @@
 # doxybook2-bin
 
-Doxybook2 1.5.0 のコンパイル済みバイナリ配布レポジトリ
+Doxybook2 1.6.1 のコンパイル済みバイナリ配布レポジトリ
 
-source: [matusnovak/doxybook2](https://github.com/matusnovak/doxybook2)
+source: [Antonz0/doxybook2](https://github.com/Antonz0/doxybook2)
 
 ## 概要
 
-このレポジトリは、Doxybook2 1.5.0 をビルドした実行バイナリを提供します。GitHub Actions によって自動的にビルドされ、Oracle Linux 8 (x64) プラットフォームに対応しています。
+このレポジトリは、Doxybook2 1.6.1 をビルドした実行バイナリを提供します。GitHub Actions によって自動的にビルドされ、Oracle Linux 8 (x64) プラットフォームに対応しています。
 
 Doxybook2 は、Doxygen の XML 出力を Markdown (または JSON) に変換するツールです。MkDocs、Hugo、VuePress、GitBook などの静的サイトジェネレータと組み合わせて、C++ API ドキュメントを生成できます。
 
@@ -62,7 +62,7 @@ doxybook2 --help
 **ワークフロー:** `.github/workflows/build-doxybook2.yml`
 
 **ビルドプロセス:**
-1. Doxybook2 1.5.0 のソースコードを clone
+1. Doxybook2 1.6.1 のソースコードを clone
 2. vcpkg で依存ライブラリをインストール
 3. Linux (Oracle Linux 8) でビルド (MinSizeRel, 静的リンク)
 4. ビルド成果物を `bin/` に配置
@@ -70,7 +70,7 @@ doxybook2 --help
 
 ## バイナリバージョン
 
-- Doxybook2: 1.5.0
+- Doxybook2: 1.6.1
 - ビルド環境: Oracle Linux 8
 
 ## ライセンス
@@ -79,5 +79,5 @@ Doxybook2 は MIT License の下で配布されています。詳細は [LICENSE
 
 ## 参考リンク
 
-- [Doxybook2 GitHub リポジトリ](https://github.com/matusnovak/doxybook2)
+- [Doxybook2 GitHub リポジトリ](https://github.com/Antonz0/doxybook2)
 - [Doxygen 公式サイト](https://www.doxygen.nl/)

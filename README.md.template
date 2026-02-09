@@ -2,7 +2,7 @@
 
 Doxybook2 {{DOXYBOOK2_VERSION}} のコンパイル済みバイナリ配布レポジトリ
 
-source: [matusnovak/doxybook2](https://github.com/matusnovak/doxybook2)
+source: [Antonz0/doxybook2](https://github.com/Antonz0/doxybook2)
 
 ## 概要
 
@@ -79,5 +79,5 @@ Doxybook2 は MIT License の下で配布されています。詳細は [LICENSE
 
 ## 参考リンク
 
-- [Doxybook2 GitHub リポジトリ](https://github.com/matusnovak/doxybook2)
+- [Doxybook2 GitHub リポジトリ](https://github.com/Antonz0/doxybook2)
 - [Doxygen 公式サイト](https://www.doxygen.nl/)

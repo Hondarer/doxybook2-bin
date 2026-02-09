@@ -43,7 +43,7 @@ jobs:
 
       - name: Clone Doxybook2 ${{ steps.version.outputs.version }}
         run: |
-          git clone --branch ${{ steps.version.outputs.git_tag }} --depth 1 https://github.com/matusnovak/doxybook2.git doxybook2-source
+          git clone --branch ${{ steps.version.outputs.git_tag }} --depth 1 https://github.com/Antonz0/doxybook2.git doxybook2-source
 
       - name: Configure git safe directory
         run: |
