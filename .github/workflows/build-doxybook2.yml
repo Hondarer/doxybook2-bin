@@ -22,9 +22,11 @@ jobs:
           - os_version: el8
             container_image: ghcr.io/hondarer/oracle-linux-container/oracle-linux-8-dev:latest
             extra_cmake_flags: -DCMAKE_CXX_STANDARD_LIBRARIES="-lstdc++fs"
+            representative: false
           - os_version: el10
             container_image: ghcr.io/hondarer/oracle-linux-container/oracle-linux-10-dev:latest
             extra_cmake_flags: ""
+            representative: true
     container:
       image: ${{ matrix.container_image }}
       credentials:
@@ -90,12 +92,44 @@ jobs:
           cp doxybook2-source/install/bin/doxybook2 artifacts/linux-${{ matrix.os_version }}-x64/
           strip artifacts/linux-${{ matrix.os_version }}-x64/doxybook2
 
+      - name: Prepare lib artifacts
+        run: |
+          mkdir -p lib-artifacts/linux-${{ matrix.os_version }}-x64
+          if [ -d doxybook2-source/install/lib ]; then
+            cp -r doxybook2-source/install/lib/* lib-artifacts/linux-${{ matrix.os_version }}-x64/
+          elif [ -d doxybook2-source/install/lib64 ]; then
+            cp -r doxybook2-source/install/lib64/* lib-artifacts/linux-${{ matrix.os_version }}-x64/
+          fi
+
+      - name: Prepare include artifacts
+        if: matrix.representative
+        run: |
+          mkdir -p include-artifacts
+          if [ -d doxybook2-source/install/include ]; then
+            cp -r doxybook2-source/install/include/* include-artifacts/
+          fi
+
       - name: Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.os_version }}-binary
           path: artifacts/linux-${{ matrix.os_version }}-x64
           if-no-files-found: error
+
+      - name: Upload Linux lib
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.os_version }}-lib
+          path: lib-artifacts/linux-${{ matrix.os_version }}-x64
+          if-no-files-found: warn
+
+      - name: Upload include
+        if: matrix.representative
+        uses: actions/upload-artifact@v4
+        with:
+          name: include
+          path: include-artifacts
+          if-no-files-found: warn
 
   commit-changes:
     needs: [build]
@@ -108,11 +142,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Clean bin directory
+      - name: Clean artifact directories
         run: |
-          # bin ディレクトリをクリーンアップ
-          rm -rf bin/
-          mkdir -p bin/
+          # bin, lib, include ディレクトリをクリーンアップ
+          rm -rf bin/ lib/ include/
+          mkdir -p bin/ lib/ include/
 
       - name: Download Linux EL8 binary
         uses: actions/download-artifact@v4
@@ -125,6 +159,24 @@ jobs:
         with:
           name: linux-el10-binary
           path: bin/linux-el10-x64/
+
+      - name: Download Linux EL8 lib
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-el8-lib
+          path: lib/linux-el8-x64/
+
+      - name: Download Linux EL10 lib
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-el10-lib
+          path: lib/linux-el10-x64/
+
+      - name: Download include
+        uses: actions/download-artifact@v4
+        with:
+          name: include
+          path: include/
 
       - name: Set executable permission
         run: |
@@ -143,11 +195,11 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          # bin, ドキュメントの変更を確認
-          if [ -n "$(git status --porcelain bin/ README.md)" ]; then
-            echo "Binary and documentation changes detected"
-            git add -A bin/ README.md
-            git commit -m "ビルド済みバイナリとドキュメントを更新"
+          # bin, lib, include, ドキュメントの変更を確認
+          if [ -n "$(git status --porcelain bin/ lib/ include/ README.md)" ]; then
+            echo "Binary, library, include, and documentation changes detected"
+            git add -A bin/ lib/ include/ README.md
+            git commit -m "ビルド済みバイナリ、ライブラリ、ヘッダー、ドキュメントを更新"
             git push
           else
             echo "No changes to commit"
