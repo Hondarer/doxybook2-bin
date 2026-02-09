@@ -65,7 +65,8 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=./install \
             -DDOXYBOOK_TESTS=OFF \
             -DVCPKG_TARGET_TRIPLET=x64-linux \
-            -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
+            -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DCMAKE_EXE_LINKER_FLAGS="-lstdc++fs"
           cmake --build ./build --config MinSizeRel -j$(nproc)
           cmake --build ./build --target install --config MinSizeRel
 
